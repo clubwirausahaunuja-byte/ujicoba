@@ -1,0 +1,224 @@
+<!-- SIMPAN sebagai payment.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pembayaran</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<style>
+   * {
+    -webkit-tap-highlight-color: transparent;
+  }
+</style>
+<body class="bg-gray-900 text-white min-h-screen p-4">
+  <div class="max-w-xl mx-auto bg-gray-800 p-6 rounded-xl shadow-lg">
+   <div class="relative mb-4">
+  <h2 class="text-2xl font-bold text-center">Form Pembayaran</h2>
+  <a href="my-data.html" class="absolute top-0 right-0 text-white text-2xl font-bold hover:text-red-500">×</a>
+</div>
+
+
+    <label>Nama</label>
+    <select id="namaDropdown" class="w-full p-2 mb-3 rounded bg-gray-700 text-white"></select>
+
+    <input id="semester" type="text" placeholder="Semester" disabled class="w-full mb-3 p-2 rounded bg-gray-700">
+    <input id="prodi" type="text" placeholder="Prodi" disabled class="w-full mb-3 p-2 rounded bg-gray-700">
+    <input id="divisi" type="text" placeholder="Divisi" disabled class="w-full mb-3 p-2 rounded bg-gray-700">
+
+    <label>Jenis Pembayaran</label>
+    <select id="jenis" class="w-full p-2 mb-3 rounded bg-gray-700 text-white">
+      <option value="kas">Kas</option>
+      <option value="iuran">Iuran foto pengurus</option>
+    </select>
+
+    <label>Metode</label>
+    <select id="metode" class="w-full p-2 mb-3 rounded bg-gray-700 text-white">
+      <option value="transfer">Transfer</option>
+      <option value="cash">Cash</option>
+    </select>
+
+    <input id="rekeningPengirim" type="text" placeholder="Nama Rekening Pengirim" class="w-full mb-3 p-2 rounded bg-gray-700">
+    <input id="bankPengirim" type="text" placeholder="Bank Pengirim" class="w-full mb-3 p-2 rounded bg-gray-700">
+    <input id="saldo" type="number" placeholder="Saldo Dikirim" class="w-full mb-3 p-2 rounded bg-gray-700">
+
+    <label>Penerima</label>
+    <select id="rekeningPenerima" class="w-full p-2 mb-2 rounded bg-gray-700 text-white">
+      <option value="Dana">Dana</option>
+      <option value="BCA">BCA</option>
+      <option value="BRI">BRI</option>
+      <option value="BNI">BNI</option>
+      <option value="Bendahara">Bendahara</option>
+    </select>
+
+    <p id="infoRekening" class="text-sm text-gray-300 mb-4 hidden"></p>
+
+    <button onclick="submitPembayaran()" class="w-full p-2 bg-blue-600 hover:bg-blue-700 rounded font-bold">Kirim</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get, push, set, child, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpPEkKbEt6b_v2OWlBfGuaVQpBg2-RWR4",
+      authDomain: "cwu-gen-2.firebaseapp.com",
+      databaseURL: "https://cwu-gen-2-default-rtdb.firebaseio.com",
+      projectId: "cwu-gen-2",
+      storageBucket: "cwu-gen-2.appspot.com",
+      messagingSenderId: "40585612014",
+      appId: "1:40585612014:web:c88141fee369aca68181ff",
+      measurementId: "G-S8D7DFJ1G3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const namaDropdown = document.getElementById("namaDropdown");
+    const metode = document.getElementById("metode");
+    const rekeningPengirim = document.getElementById("rekeningPengirim");
+    const bankPengirim = document.getElementById("bankPengirim");
+    const rekeningPenerima = document.getElementById("rekeningPenerima");
+    const infoRekening = document.getElementById("infoRekening");
+
+    const usersRef = ref(db, "users");
+    onValue(usersRef, (snapshot) => {
+      namaDropdown.innerHTML = `<option value="">Pilih Nama</option>`;
+      snapshot.forEach(child => {
+        const user = child.val();
+        if (user.nama) {
+          const opt = document.createElement("option");
+          opt.value = child.key;
+          opt.textContent = user.nama;
+          opt.dataset.email = user.email || "";
+          namaDropdown.appendChild(opt);
+        }
+      });
+    });
+
+    namaDropdown.addEventListener("change", async () => {
+      const uid = namaDropdown.value;
+      if (!uid) return;
+      const userSnap = await get(child(ref(db), "users/" + uid));
+      if (userSnap.exists()) {
+        const data = userSnap.val();
+        document.getElementById("semester").value = data.semester || "";
+        document.getElementById("prodi").value = data.prodi || "";
+        document.getElementById("divisi").value = data.divisi || "";
+      }
+    });
+
+    metode.addEventListener("change", () => {
+      const bendaharaOption = [...rekeningPenerima.options].find(opt => opt.value === "Bendahara");
+
+      if (metode.value === "cash") {
+        rekeningPengirim.value = "Cash";
+        rekeningPengirim.disabled = true;
+
+        bankPengirim.value = "Cash";
+        bankPengirim.disabled = true;
+
+        // Tambahkan kembali opsi Bendahara jika belum ada
+        if (!bendaharaOption) {
+          const newOpt = document.createElement("option");
+          newOpt.value = "Bendahara";
+          newOpt.text = "Bendahara";
+          rekeningPenerima.appendChild(newOpt);
+        }
+
+        rekeningPenerima.value = "Bendahara";
+        rekeningPenerima.disabled = true;
+        infoRekening.classList.add("hidden");
+      } else {
+        rekeningPengirim.value = "";
+        rekeningPengirim.disabled = false;
+
+        bankPengirim.value = "";
+        bankPengirim.disabled = false;
+
+        rekeningPenerima.disabled = false;
+
+        // Hapus opsi Bendahara jika ada
+        if (bendaharaOption) {
+          bendaharaOption.remove();
+        }
+
+        rekeningPenerima.value = "Dana"; // default
+        updateRekeningInfo();
+      }
+    });
+
+    rekeningPenerima.addEventListener("change", updateRekeningInfo);
+
+    function updateRekeningInfo() {
+      const value = rekeningPenerima.value;
+      let infoText = "";
+
+      if (value === "Dana") {
+        infoText = "Transfer ke 0966 a/n Ojik";
+      } else if (value === "BCA") {
+        infoText = "Transfer ke 1234567890 a/n CWU";
+      } else if (value === "BNI") {
+        infoText = "Transfer ke 9876543210 a/n CWU";
+      } else if (value === "BRI") {
+        infoText = "Transfer ke 555000123456789 a/n CWU";
+      }
+
+      if (infoText) {
+        infoRekening.textContent = infoText;
+        infoRekening.classList.remove("hidden");
+      } else {
+        infoRekening.classList.add("hidden");
+      }
+    }
+
+    window.submitPembayaran = async () => {
+      const uid = namaDropdown.value;
+      const nama = namaDropdown.options[namaDropdown.selectedIndex].text;
+      const email = namaDropdown.options[namaDropdown.selectedIndex].dataset.email || "";
+      const jenis = document.getElementById("jenis").value;
+      const metodeVal = metode.value;
+      const rekeningPengirimVal = rekeningPengirim.value.trim();
+      const bankPengirimVal = bankPengirim.value.trim();
+      const saldo = document.getElementById("saldo").value.trim();
+      const rekeningPenerimaVal = rekeningPenerima.value;
+
+      if (!uid || !rekeningPengirimVal || !bankPengirimVal || !saldo) {
+        alert("Isi semua kolom!");
+        return;
+      }
+
+      const now = new Date();
+const jam = now.toLocaleTimeString("id-ID", { hour12: false });
+const tanggal = now.toLocaleDateString("id-ID");
+const waktu = `${jam} - ${tanggal}`;
+
+      const newData = {
+        uid,
+        email,
+        nama,
+        jenis,
+        metode: metodeVal,
+        tgl: waktu,
+        saldo: parseInt(saldo),
+        bankPengirim: bankPengirimVal,
+        rekeningPengirim: rekeningPengirimVal,
+        rekeningPenerima: rekeningPenerimaVal,
+        status: "pending"
+      };
+
+      const userDataRef = ref(db, `users/${uid}/pembayaran`);
+      const userPushRef = push(userDataRef);
+      const pembayaranId = userPushRef.key;
+      const fullData = { ...newData, id: pembayaranId };
+
+      await set(userPushRef, fullData);
+      await set(ref(db, `pembayaran/${pembayaranId}`), fullData);
+
+      alert("Pembayaran berhasil dikirim! Menunggu konfirmasi admin.");
+      location.href = "my-data.html";
+    };
+  </script>
+</body>
+</html>

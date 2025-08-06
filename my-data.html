@@ -1,0 +1,252 @@
+<!-- SIMPAN SEBAGAI: my-data.html -->
+<!DOCTYPE html>
+<html lang="id">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>  
+  <title>My Data</title>  
+  <script src="https://cdn.tailwindcss.com"></script>  
+  <script src="https://unpkg.com/@popperjs/core@2"></script>  
+  <style>  
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dropdown { display: none; }  
+    .dropdown.show { display: block; }  
+    button:focus, a:focus {
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>  
+</head>  
+<body class="bg-gray-900 text-white min-h-screen p-4">  
+  <div class="max-w-5xl mx-auto bg-gray-800 p-6 rounded-xl shadow-lg relative">  
+
+<!-- ICON USER + DROPDOWN -->  
+<div class="absolute top-4 right-6">  
+  <div class="relative inline-block">  
+    <button id="userBtn" class="text-white text-2xl hover:text-blue-400">👤</button>  
+    <div id="userDropdown" class="dropdown absolute right-0 mt-2 bg-gray-700 rounded shadow-lg p-2 w-48 z-50">  
+      <button id="lengkapiBtn" onclick="openForm()" class="block w-full text-left hover:bg-gray-600 px-2 py-1">Lengkapi Data</button>  
+      <button onclick="openPasswordModal()" class="block w-full text-left hover:bg-gray-600 px-2 py-1">Ganti Password</button>  
+      <button onclick="logout()" class="block w-full text-left hover:bg-gray-600 px-2 py-1 text-red-400">Logout</button>  
+    </div>  
+  </div>  
+</div>  
+
+<h2 class="text-2xl font-bold mb-4">Tabungan <span id="namaUser">...</span></h2>  
+
+<!-- Tabel -->
+<div class="overflow-x-auto mb-6">
+  <table class="w-full text-left table-auto border-collapse border border-gray-600">
+    <thead class="bg-gray-700">
+      <tr>
+        <th class="border border-gray-600 p-2">No</th>
+        <th class="border border-gray-600 p-2">Tanggal</th>
+        <th class="border border-gray-600 p-2">Keterangan</th>
+        <th class="border border-gray-600 p-2">Nominal</th>
+        <th class="border border-gray-600 p-2">Bank Pengirim</th>
+        <th class="border border-gray-600 p-2">Status</th>
+      </tr>
+    </thead>
+    <tbody id="dataBody">
+      <tr>
+        <td colspan="6" class="border border-gray-600 p-2 text-center">Memuat data...</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Navigasi bawah -->
+<div class="flex justify-between">
+  <a href="payment.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">Pembayaran</a>
+  <a href="https://docs.google.com/spreadsheets/d/14LrpDUZDxsvRBTYd6nIn8RKA5sbStcyjIGpJMvlUPgs/edit?usp=sharing" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">Lihat Semua</a>
+</div>
+
+</div>  
+
+<!-- Modal Lengkapi Data -->  
+<div id="lengkapiDataModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50">  
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">  
+    <button onclick="closeForm()" class="absolute top-2 right-3 text-gray-400 hover:text-red-400 text-xl">✖</button>  
+    <h3 class="text-xl font-bold mb-2 text-center">Lengkapi Data</h3>
+    <p class="text-red-400 text-sm text-center mb-4">
+      ⚠️ Data hanya bisa diisi 1x. Harap isi dengan benar dan teliti.
+    </p>
+    
+    <input id="nama" type="text" placeholder="Nama lengkap yaww >//<" class="w-full mb-3 p-2 rounded bg-gray-700 border border-gray-600">  
+    <input id="semester" type="text" placeholder="Semester aktif saiki" class="w-full mb-3 p-2 rounded bg-gray-700 border border-gray-600">  
+    <input id="prodi" type="text" placeholder="Prodi mu gess" class="w-full mb-3 p-2 rounded bg-gray-700 border border-gray-600">  
+    <input id="divisi" type="text" placeholder="Divisi sekarang" class="w-full mb-4 p-2 rounded bg-gray-700 border border-gray-600">  
+    <button onclick="saveProfile()" class="bg-green-600 hover:bg-green-700 w-full p-2 rounded font-bold">Simpan</button>  
+  </div>  
+</div>
+
+<!-- Modal Ganti Password -->
+<div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50">
+  <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
+    <button onclick="closePasswordModal()" class="absolute top-2 right-3 text-gray-400 hover:text-red-400 text-xl">✖</button>
+    <h3 class="text-xl font-bold mb-4 text-center">Ganti Password</h3>
+    <input id="oldPass" type="password" placeholder="Password Lama" class="w-full mb-3 p-2 rounded bg-gray-700 border border-gray-600">
+    <input id="newPass" type="password" placeholder="Password Baru" class="w-full mb-4 p-2 rounded bg-gray-700 border border-gray-600">
+    <button onclick="changePassword()" class="bg-blue-600 hover:bg-blue-700 w-full p-2 rounded font-bold">Ganti</button>
+  </div>
+</div>
+
+<!-- Firebase Script -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDpPEkKbEt6b_v2OWlBfGuaVQpBg2-RWR4",
+    authDomain: "cwu-gen-2.firebaseapp.com",
+    databaseURL: "https://cwu-gen-2-default-rtdb.firebaseio.com",
+    projectId: "cwu-gen-2",
+    storageBucket: "cwu-gen-2.appspot.com",
+    messagingSenderId: "40585612014",
+    appId: "1:40585612014:web:c88141fee369aca68181ff",
+    measurementId: "G-S8D7DFJ1G3"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const username = localStorage.getItem("loggedInUser");
+  const userRef = ref(db, "users/" + username);
+
+  window.onload = async () => {
+    if (!username) {
+      alert("Silakan login terlebih dahulu.");
+      window.location.href = "index.html";
+      return;
+    }
+
+    const snapshot = await get(userRef);
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      if (!data.nama || !data.semester || !data.prodi || !data.divisi) {
+        openForm();
+      } else {
+        document.getElementById("namaUser").textContent = data.nama;
+        document.getElementById("lengkapiBtn").style.display = "none";
+      }
+    }
+
+    const pembayaranRef = ref(db, "users/" + username + "/pembayaran");
+    const tbody = document.getElementById("dataBody");
+
+    // REAL-TIME update ketika ada perubahan
+    onValue(pembayaranRef, (snapshot) => {
+      tbody.innerHTML = "";
+
+      if (snapshot.exists()) {
+        let no = 1;
+        snapshot.forEach(child => {
+          const item = child.val();
+          const tr = document.createElement("tr");
+tr.innerHTML = `
+  <td class="border border-gray-600 p-2">${no++}</td>
+  <td class="border border-gray-600 p-2">${item.tgl || '-'}</td>
+  <td class="border border-gray-600 p-2">${item.jenis || '-'}</td>
+  <td class="border border-gray-600 p-2">Rp ${item.saldo?.toLocaleString('id-ID') || '-'}</td>
+  <td class="border border-gray-600 p-2">${item.bankPengirim || '-'}</td>
+  <td class="border border-gray-600 p-2">
+    ${item.status === 'diterima'
+      ? '<span class="bg-green-600 text-white px-2 py-1 rounded text-sm font-semibold">Diterima</span>'
+      : '<span class="bg-red-600 text-white px-2 py-1 rounded text-sm font-semibold">Dikirim</span>'}
+  </td>
+`;
+
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="border border-gray-600 p-2 text-center">Belum ada data</td>
+          </tr>
+        `;
+      }
+    });
+  };
+
+  document.getElementById("userBtn").onclick = () => {
+    document.getElementById("userDropdown").classList.toggle("show");
+  };
+
+  window.openForm = () => {
+    document.getElementById("userDropdown").classList.remove("show");
+    document.getElementById("lengkapiDataModal").classList.remove("hidden");
+  };
+  window.closeForm = () => {
+    document.getElementById("lengkapiDataModal").classList.add("hidden");
+  };
+
+  window.openPasswordModal = () => {
+    document.getElementById("userDropdown").classList.remove("show");
+    document.getElementById("passwordModal").classList.remove("hidden");
+  };
+  window.closePasswordModal = () => {
+    document.getElementById("passwordModal").classList.add("hidden");
+  };
+
+  window.saveProfile = async () => {
+    const nama = document.getElementById("nama").value.trim();
+    const semester = document.getElementById("semester").value.trim();
+    const prodi = document.getElementById("prodi").value.trim();
+    const divisi = document.getElementById("divisi").value.trim();
+
+    if (!nama || !semester || !prodi || !divisi) {
+      alert("Harap lengkapi semua data!");
+      return;
+    }
+
+    const prev = await get(userRef);
+    const val = prev.val();
+
+    if (val.nama && val.semester && val.prodi && val.divisi) {
+      alert("Data sudah dilengkapi dan tidak dapat diubah.");
+      closeForm();
+      return;
+    }
+
+    await set(userRef, {
+      ...val,
+      nama, semester, prodi, divisi
+    });
+
+    closeForm();
+    document.getElementById("namaUser").textContent = nama;
+    document.getElementById("lengkapiBtn").style.display = "none";
+  };
+
+  window.changePassword = async () => {
+    const oldPass = document.getElementById("oldPass").value.trim();
+    const newPass = document.getElementById("newPass").value.trim();
+
+    const snapshot = await get(userRef);
+    if (!snapshot.exists()) return;
+
+    const user = snapshot.val();
+    if (oldPass !== user.password) {
+      alert("Password lama salah.");
+      return;
+    }
+
+    if (oldPass === newPass) {
+      alert("Password baru harus berbeda.");
+      return;
+    }
+
+    await set(userRef, { ...user, password: newPass });
+    alert("Password berhasil diganti.");
+    closePasswordModal();
+  };
+
+  window.logout = () => {
+    localStorage.removeItem("loggedInUser");
+    window.location.href = "index.html";
+  };
+</script>
+
+</body>
+</html>

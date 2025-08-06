@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Akun</title>
+  <style>
+   * {
+    -webkit-tap-highlight-color: transparent;
+  }
+</style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpPEkKbEt6b_v2OWlBfGuaVQpBg2-RWR4",
+      authDomain: "cwu-gen-2.firebaseapp.com",
+      databaseURL: "https://cwu-gen-2-default-rtdb.firebaseio.com",
+      projectId: "cwu-gen-2",
+      storageBucket: "cwu-gen-2.appspot.com",
+      messagingSenderId: "40585612014",
+      appId: "1:40585612014:web:c88141fee369aca68181ff",
+      measurementId: "G-S8D7DFJ1G3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.loginUser = async function () {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!username || !password) {
+        alert("Harap isi semua kolom.");
+        return;
+      }
+
+      // ➤ Login khusus untuk bendahara
+      if (username === "karin" && password === "roblox") {
+        alert("Login sebagai Bendahara");
+        localStorage.setItem("loggedInUser", username);
+        window.location.href = "bendahara.html";
+        return;
+      }
+
+      const userRef = ref(db, "users/" + username);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        if (data.password === password) {
+          alert("Login berhasil!");
+          localStorage.setItem("loggedInUser", username); // simpan email/username
+          window.location.href = "my-data.html"; // arahkan ke dashboard user
+        } else {
+          alert("Password salah!");
+        }
+      } else {
+        alert("Akun tidak ditemukan. Silakan buat akun terlebih dahulu.");
+        window.location.href = "create.html";
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
+  <div class="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm">
+    <h1 class="text-2xl font-bold mb-4 text-center">Login</h1>
+    <input id="username" type="text" placeholder="Email Anda" class="w-full mb-3 p-2 rounded bg-gray-700 border border-gray-600" />
+    <input id="password" type="password" placeholder="Password" class="w-full mb-4 p-2 rounded bg-gray-700 border border-gray-600" />
+    <button onclick="loginUser()" class="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded font-bold">Masuk</button>
+    <p class="mt-4 text-sm text-center">Belum punya akun? <a href="create.html" class="text-blue-400 hover:underline">Daftar di sini</a></p>
+  </div>
+</body>
+</html>

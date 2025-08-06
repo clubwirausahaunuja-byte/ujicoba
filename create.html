@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buat Akun</title>
+  <style>
+   * {
+    -webkit-tap-highlight-color: transparent;
+  }
+</style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpPEkKbEt6b_v2OWlBfGuaVQpBg2-RWR4",
+      authDomain: "cwu-gen-2.firebaseapp.com",
+      databaseURL: "https://cwu-gen-2-default-rtdb.firebaseio.com",
+      projectId: "cwu-gen-2",
+      storageBucket: "cwu-gen-2.appspot.com",
+      messagingSenderId: "40585612014",
+      appId: "1:40585612014:web:c88141fee369aca68181ff",
+      measurementId: "G-S8D7DFJ1G3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.createAccount = async function () {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      const userRef = ref(db, "users/" + username);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        alert("Akun sudah terdaftar!");
+      } else {
+        await set(userRef, { password: password });
+        alert("Akun berhasil dibuat! Silakan login.");
+        window.location.href = "index.html";
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
+  <div class="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm">
+    <h1 class="text-2xl font-bold mb-4 text-center">Buat Akun</h1>
+    <input id="username" type="text" placeholder="Username" class="w-full mb-3 p-2 rounded bg-gray-700 border border-gray-600" />
+    <input id="password" type="password" placeholder="Password" class="w-full mb-4 p-2 rounded bg-gray-700 border border-gray-600" />
+    <button onclick="createAccount()" class="w-full bg-green-600 hover:bg-green-700 p-2 rounded font-bold">Daftar</button>
+    <p class="mt-4 text-sm text-center">Sudah punya akun? <a href="index.html" class="text-blue-400 hover:underline">Login di sini</a></p>
+  </div>
+</body>
+</html>
+
